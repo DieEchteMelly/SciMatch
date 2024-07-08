@@ -20,8 +20,7 @@ RUN pip install --upgrade pip setuptools
 RUN pip install -r requirements.txt
 
 # Copy the current directory contents into the container at /app
-COPY . /app
-RUN ls -la /app
+COPY . /app/
 
 # Add the app directory to PYTHONPATH
 ENV PYTHONPATH="/app:${PYTHONPATH:-}"
