@@ -11,6 +11,8 @@ RUN apt-get update && \
     apt-get -y install gcc mono-mcs cron && \
     rm -rf /var/lib/apt/lists/*
 
+RUN ls -la ./
+
 # Upgrade pip and setuptools
 RUN pip install --upgrade pip setuptools
 
