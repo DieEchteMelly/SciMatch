@@ -4,7 +4,6 @@ from langchain.embeddings import OllamaEmbeddings
 from langchain_community.document_loaders import DataFrameLoader
 from langchain_core.documents import Document
 import requests, json
-from langchain_chroma import Chroma
 from langchain_community.vectorstores import FAISS
 import faiss
 import numpy as np
@@ -13,6 +12,11 @@ from pyvis.network import Network
 import pandas as pd
 import seaborn as sns
 from sklearn.cluster import DBSCAN
+import os
+from os.path import join, dirname
+from dotenv import load_dotenv
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
 
 pd.set_option('display.max_colwidth',None)
 
@@ -23,7 +27,7 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors):
     hostname = "chat.cosy.bio"
     host = f"{protocol}://{hostname}"
 
-    account = {'email': 'melanie.altmann@studium.uni-hamburg.de', 'password': 'be$oPe96'}
+    account = {'email': os.getenv('ollama_user'), 'password': os.getenv('ollama_pw')}
     auth_url = f"{host}/api/v1/auths/signin"
     api_url = f"{host}/ollama"
 
@@ -34,8 +38,8 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors):
     ollama_embeddings = OllamaEmbeddings(base_url=api_url, model='nomic-embed-text', headers= {"Authorization": "Bearer " + jwt})
 
     loader = DataFrameLoader(authors_df, page_content_column="research")
-    documents= loader.load()
-    vectorstore = Chroma.from_documents(
+    documents=loader.load()
+    vectorstore = FAISS.from_documents(
         documents,embedding=ollama_embeddings,
     )
 

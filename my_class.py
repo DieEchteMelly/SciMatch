@@ -2,6 +2,7 @@ from ollamaworking import documentloader_fromprompt
 from makingmap import parsedInfotoDF, create_pmid_authors_df, draw_map, search_for_paper_main_authors
 from makingnetwork import lets_embed
 
+
 class SciMatch:
     def __init__(self):
         pass

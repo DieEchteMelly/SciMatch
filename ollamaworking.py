@@ -7,6 +7,11 @@ from langchain_community.llms import Ollama
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain.prompts import PromptTemplate
 import requests, json
+import os
+from os.path import join, dirname
+from dotenv import load_dotenv
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
 
 def documentloader_fromprompt(research_topic, top_k):
     print(f"Debug: documentloader_fromprompt called with research_topic='{research_topic}' and top_k='{top_k}'")
@@ -17,7 +22,7 @@ def documentloader_fromprompt(research_topic, top_k):
 
         host = f"{protocol}://{hostname}"
 
-        account = {'email': 'melanie.altmann@studium.uni-hamburg.de', 'password': 'be$oPe96'}
+        account = {'email': os.getenv('ollama_user'), 'password': os.getenv('ollama_pw')}
         auth_url = f"{host}/api/v1/auths/signin"
         api_url = f"{host}/ollama"
 
