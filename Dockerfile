@@ -21,13 +21,10 @@ RUN pip install -r requirements.txt
 
 # Copy the current directory contents into the container at /app
 COPY . /app
-RUN ls -la /app
+RUN echo "Contents of /app:" && ls -la /app
 
 # Add the app directory to PYTHONPATH
 ENV PYTHONPATH="/app:${PYTHONPATH:-}"
-
-# Expose the port Streamlit runs on
-EXPOSE 8501
 
 # Command to run the application
 CMD ["streamlit", "run", "/app/main.py"]

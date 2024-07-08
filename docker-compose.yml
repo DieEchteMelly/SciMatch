@@ -1,4 +1,4 @@
-version: '2'  # Use a more recent version of Docker Compose
+version: '3.8'  # Use a more recent version
 
 services:
   app:
@@ -6,10 +6,8 @@ services:
     container_name: scimatch
     build: .
     ports:
-      - "8501:8501"
+      - "8211:8501"
     env_file:
       - .env
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-    volumes:
-      - .:/app  # Mount the current directory to /app in the container
