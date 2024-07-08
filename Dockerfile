@@ -3,13 +3,15 @@ FROM python:3.11-slim-buster
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy requirements file
-COPY requirements.txt ./
+
 
 # Install necessary packages
 RUN apt-get update && \
     apt-get -y install gcc mono-mcs cron && \
     rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file
+COPY requirements.txt ./
 
 RUN ls -la ./
 
