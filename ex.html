@@ -1,0 +1,528 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/css/tom-select.min.css" integrity="sha512-43fHB3GLgZfz8QXl1RPQ8O66oIgv3po9cJ5erMt1c4QISq9dYb195T3vr5ImnJPXuVroKcGBPXBFKETW8jrPNQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/js/tom-select.complete.js" integrity="sha512-jeF9CfnvzDiw9G9xiksVjxR2lib44Gnovvkv+3CgCG6NXCD4gqlA5nDAVW5WjpA+i+/zKsUWV5xNEbW1X/HH0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 750px;
+                 background-color: #dddddd;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+              <div id="filter-menu" class="card-header">
+                <div class="row no-gutters">
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'item')"
+                            id="select-item"
+                        >
+                        <option value="">Select a network item</option>
+                        <option value="edge">edge</option>
+                        <option value="node">node</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'property')"
+                            id="select-property"
+                        >
+                        <option value="">Select a property...</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            id="select-value"
+                        >
+                        <option value="">Select value(s)...</option>
+                    </select>
+                  </div>
+                  <div class="col-1 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="highlightFilter(filter);">Filter</button>
+                  </div>
+                  <div class="col-2 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="clearFilter(true)">Reset Selection</button>
+                  </div>
+                </div>
+              </div>
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+                  // explicitly using onItemAdd and this function as we need to save multiple values
+                  let updateValueFilter = function() {
+                      return function () {
+                      filter['value'].push(arguments[0])
+                      }
+                  }
+
+                  let valueControl = new TomSelect("#select-value",{
+                      maxItems: null,
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: updateValueFilter()
+                  });
+
+                  let addValues = function() {
+                      return function () {
+                          // clear the current value options and add the selected attribute values
+                          // tom-select handles duplicates
+                          let selectedProperty = arguments[0];
+                          valueControl.clear();
+                          valueControl.clearOptions();
+                          filter['value'] = []
+                          if (filter['item'] === 'node') {
+                              for (let each in allNodes) {
+                                  valueControl.addOption({
+                                      id:allNodes[each][selectedProperty],
+                                      title:allNodes[each][selectedProperty]
+                                  })
+                              }
+                          }
+                          else if (filter['item'] === 'edge') {
+                              for (let each in allEdges) {
+                                  valueControl.addOption({
+                                      id:allEdges[each][selectedProperty],
+                                      title:allEdges[each][selectedProperty]
+                                  })
+                              }
+                          }
+                      }
+                  };
+
+                  let propControl = new TomSelect("#select-property",{
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addValues()
+                  });
+
+                  let addProperties = function() {
+                      return function () {
+                          // loops through the selected network item and adds the attributes to dropdown
+                          // tom-select handles duplicates
+                          clearFilter(false)
+                          if (arguments[0] === 'edge') {
+                              for (let each in allEdges) {
+                                  if (allEdges.hasOwnProperty(each)) {
+                                      for (let eachProp in allEdges[each]) {
+                                          if (allEdges[each].hasOwnProperty(eachProp)) {
+                                              propControl.addOption({id: eachProp, title: eachProp})
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                          else if (arguments[0] === 'node') {
+                              for (let each in allNodes) {
+                                  if (allNodes.hasOwnProperty(each)) {
+                                      for (let eachProp in allNodes[each]) {
+                                          if (allNodes[each].hasOwnProperty(eachProp)
+                                              && (eachProp !== 'hidden' && eachProp !== 'savedLabel'
+                                                  && eachProp !== 'hiddenLabel')) {
+                                              propControl.addOption({id: eachProp, title: eachProp})
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  };
+
+                  let itemControl = new TomSelect("#select-item",{
+                      create: false,
+                      sortField:{
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addProperties()
+                  });
+
+                  function clearFilter(reset) {
+                      // utility function to clear all the selected filter options
+                      // if reset is set to true, the existing filter will be removed
+                      // else, only the dropdown options are cleared
+                      propControl.clear();
+                      propControl.clearOptions();
+                      valueControl.clear();
+                      valueControl.clearOptions();
+                      filter = {
+                          item : '',
+                          property : '',
+                          value : []
+                      }
+                      if (reset) {
+                          itemControl.clear();
+                          filterHighlight({nodes: []})
+                      }
+                  }
+
+                  function updateFilter(value, key) {
+                      // key could be 'item' or 'property' and value is as selected in dropdown
+                      filter[key] = value
+                  }
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#83ff00", "font": {"color": "black"}, "id": 0, "label": "Adnan A Al-Bdairi", "shape": "dot", "title": "Forename: Adnan A\u003cbr\u003eLastname: Al-Bdairi\u003cbr\u003eAffiliation: Infertility, Assisted Reproductive Technologies, Teba IVF and Genetic Center, Babylon, IRQ."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 1, "label": "Andrej Sali", "shape": "dot", "title": "Forename: Andrej\u003cbr\u003eLastname: Sali\u003cbr\u003eAffiliation: Department of Bioengineering and Therapeutic Sciences, Department of Pharmaceutical Chemistry, California Institute for Quantitative Biosciences, Byers Hall, University of California, San Francisco, San Francisco, United States."}, {"color": "#83ff00", "font": {"color": "black"}, "id": 2, "label": "Ashwaq A Shweliyya", "shape": "dot", "title": "Forename: Ashwaq A\u003cbr\u003eLastname: Shweliyya\u003cbr\u003eAffiliation: Obstetrics and Gynecology, Teba IVF and Genetic Center, Babylon, IRQ."}, {"color": "#83ff00", "font": {"color": "black"}, "id": 3, "label": "Batool A Alkhalidi", "shape": "dot", "title": "Forename: Batool A\u003cbr\u003eLastname: Alkhalidi\u003cbr\u003eAffiliation: Obstetrics and Gynecology, College of Medicine, University of Kufa, Najaf, IRQ."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 4, "label": "Brian T Chait", "shape": "dot", "title": "Forename: Brian T\u003cbr\u003eLastname: Chait\u003cbr\u003eAffiliation: Laboratory of Mass Spectrometry and Gaseous Ion Chemistry, The Rockefeller University, New York, United States."}, {"color": "#7100ff", "font": {"color": "black"}, "id": 5, "label": "Cai Li", "shape": "dot", "title": "Forename: Cai\u003cbr\u003eLastname: Li\u003cbr\u003eAffiliation: Infectious Disease Prevention and Control Center, Wuhan Center for Disease Control and Prevention, Wuhan, Hubei, People\u0027s Republic of China."}, {"color": "#7100ff", "font": {"color": "black"}, "id": 6, "label": "Cheng Su", "shape": "dot", "title": "Forename: Cheng\u003cbr\u003eLastname: Su\u003cbr\u003eAffiliation: School of Public Health, Huazhong University of Science and Technology, Wuhan, Hubei, People\u0027s Republic of China."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 7, "label": "Fred D Mast", "shape": "dot", "title": "Forename: Fred D\u003cbr\u003eLastname: Mast\u003cbr\u003eAffiliation: Center for Global Infectious Disease Research, Seattle Children\u0027s Research Institute, Seattle, United States."}, {"color": "#83ff00", "font": {"color": "black"}, "id": 8, "label": "Hanan K Alkadhim", "shape": "dot", "title": "Forename: Hanan K\u003cbr\u003eLastname: Alkadhim\u003cbr\u003eAffiliation: Obstetrics and Gynecology, Iraqi Fertility Society, College of Medicine, University of Babylon, Babylon, IRQ."}, {"color": "#83ff00", "font": {"color": "black"}, "id": 9, "label": "Hayder A Makki", "shape": "dot", "title": "Forename: Hayder A\u003cbr\u003eLastname: Makki\u003cbr\u003eAffiliation: Pharmacology and Toxicology, College of Pharmacy, University of Babylon, Babylon, IRQ."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 10, "label": "Jean Paul Olivier", "shape": "dot", "title": "Forename: Jean Paul\u003cbr\u003eLastname: Olivier\u003cbr\u003eAffiliation: Center for Global Infectious Disease Research, Seattle Children\u0027s Research Institute, Seattle, United States."}, {"color": "#7100ff", "font": {"color": "black"}, "id": 11, "label": "Jing Wang", "shape": "dot", "title": "Forename: Jing\u003cbr\u003eLastname: Wang\u003cbr\u003eAffiliation: School of Public Health, Huazhong University of Science and Technology, Wuhan, Hubei, People\u0027s Republic of China."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 12, "label": "John D Aitchison", "shape": "dot", "title": "Forename: John D\u003cbr\u003eLastname: Aitchison\u003cbr\u003eAffiliation: Department of Biochemistry, University of Washington, Seattle, United States. Center for Global Infectious Disease Research, Seattle Children\u0027s Research Institute, Seattle, United States. Department of Pediatrics, University of Washington, Seattle, United States."}, {"color": "#7100ff", "font": {"color": "black"}, "id": 13, "label": "Linlin Liu", "shape": "dot", "title": "Forename: Linlin\u003cbr\u003eLastname: Liu\u003cbr\u003eAffiliation: Infectious Disease Prevention and Control Center, Hubei Center for Disease Control and Prevention, Wuhan, Hubei, People\u0027s Republic of China."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 14, "label": "Michael P Rout", "shape": "dot", "title": "Forename: Michael P\u003cbr\u003eLastname: Rout\u003cbr\u003eAffiliation: Laboratory of Cellular and Structural Biology, The Rockefeller University, New York, United States."}, {"color": "#83ff00", "font": {"color": "black"}, "id": 15, "label": "Nadia M Al-Hilli", "shape": "dot", "title": "Forename: Nadia M\u003cbr\u003eLastname: Al-Hilli\u003cbr\u003eAffiliation: Obstetrics and Gynecology, College of Medicine, University of Babylon, Babylon, IRQ."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 16, "label": "Natalia E Ketaren", "shape": "dot", "title": "Forename: Natalia E\u003cbr\u003eLastname: Ketaren\u003cbr\u003eAffiliation: Laboratory of Cellular and Structural Biology, The Rockefeller University, New York, United States."}, {"color": "#83ff00", "font": {"color": "black"}, "id": 17, "label": "Osama Shawki", "shape": "dot", "title": "Forename: Osama\u003cbr\u003eLastname: Shawki\u003cbr\u003eAffiliation: Gynecology Surgery, School of Medicine, Cairo University, Cairo, EGY."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 18, "label": "Peter C Fridy", "shape": "dot", "title": "Forename: Peter C\u003cbr\u003eLastname: Fridy\u003cbr\u003eAffiliation: Laboratory of Cellular and Structural Biology, The Rockefeller University, New York, United States."}, {"color": "#83ff00", "font": {"color": "black"}, "id": 19, "label": "Sallama H Alkhudair", "shape": "dot", "title": "Forename: Sallama H\u003cbr\u003eLastname: Alkhudair\u003cbr\u003eAffiliation: Fertility, Assisted Reproductive Technology, Alzaitoon Specialized Fertility Center, Baghdad, IRQ."}, {"color": "#00fff5", "font": {"color": "black"}, "id": 20, "label": "Tanmoy Sanyal", "shape": "dot", "title": "Forename: Tanmoy\u003cbr\u003eLastname: Sanyal\u003cbr\u003eAffiliation: Department of Bioengineering and Therapeutic Sciences, Department of Pharmaceutical Chemistry, California Institute for Quantitative Biosciences, Byers Hall, University of California, San Francisco, San Francisco, United States."}, {"color": "#7100ff", "font": {"color": "black"}, "id": 21, "label": "Xianfeng Zhang", "shape": "dot", "title": "Forename: Xianfeng\u003cbr\u003eLastname: Zhang\u003cbr\u003eAffiliation: Infectious Disease Prevention and Control Center, Hubei Center for Disease Control and Prevention, Wuhan, Hubei, People\u0027s Republic of China."}, {"color": "#7100ff", "font": {"color": "black"}, "id": 22, "label": "Xinyi Hu", "shape": "dot", "title": "Forename: Xinyi\u003cbr\u003eLastname: Hu\u003cbr\u003eAffiliation: Global Study Institute, University of Geneva, Geneva, 1205, Switzerland."}, {"color": "#7100ff", "font": {"color": "black"}, "id": 23, "label": "Yeqing Tong", "shape": "dot", "title": "Forename: Yeqing\u003cbr\u003eLastname: Tong\u003cbr\u003eAffiliation: Infectious Disease Prevention and Control Center, Hubei Center for Disease Control and Prevention, Wuhan, Hubei, People\u0027s Republic of China."}]);
+                  edges = new vis.DataSet([{"from": 0, "title": "Edge from 0 to 1\u003cbr\u003eSimilarity: 0.78", "to": 1, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 4\u003cbr\u003eSimilarity: 0.78", "to": 4, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 5\u003cbr\u003eSimilarity: 0.74", "to": 5, "value": 0.7446007132530212}, {"from": 0, "title": "Edge from 0 to 6\u003cbr\u003eSimilarity: 0.74", "to": 6, "value": 0.7446007132530212}, {"from": 0, "title": "Edge from 0 to 7\u003cbr\u003eSimilarity: 0.78", "to": 7, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 10\u003cbr\u003eSimilarity: 0.78", "to": 10, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 11\u003cbr\u003eSimilarity: 0.74", "to": 11, "value": 0.7446007132530212}, {"from": 0, "title": "Edge from 0 to 12\u003cbr\u003eSimilarity: 0.78", "to": 12, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 13\u003cbr\u003eSimilarity: 0.74", "to": 13, "value": 0.7446007132530212}, {"from": 0, "title": "Edge from 0 to 14\u003cbr\u003eSimilarity: 0.78", "to": 14, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 16\u003cbr\u003eSimilarity: 0.78", "to": 16, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 18\u003cbr\u003eSimilarity: 0.78", "to": 18, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 20\u003cbr\u003eSimilarity: 0.78", "to": 20, "value": 0.7755730152130127}, {"from": 0, "title": "Edge from 0 to 21\u003cbr\u003eSimilarity: 0.74", "to": 21, "value": 0.7446007132530212}, {"from": 0, "title": "Edge from 0 to 22\u003cbr\u003eSimilarity: 0.74", "to": 22, "value": 0.7446007132530212}, {"from": 0, "title": "Edge from 0 to 23\u003cbr\u003eSimilarity: 0.74", "to": 23, "value": 0.7446007132530212}, {"from": 1, "title": "Edge from 1 to 2\u003cbr\u003eSimilarity: 0.78", "to": 2, "value": 0.7755730152130127}, {"from": 1, "title": "Edge from 1 to 3\u003cbr\u003eSimilarity: 0.78", "to": 3, "value": 0.7755730152130127}, {"from": 1, "title": "Edge from 1 to 5\u003cbr\u003eSimilarity: 0.76", "to": 5, "value": 0.7630692720413208}, {"from": 1, "title": "Edge from 1 to 6\u003cbr\u003eSimilarity: 0.76", "to": 6, "value": 0.7630692720413208}, {"from": 1, "title": "Edge from 1 to 8\u003cbr\u003eSimilarity: 0.78", "to": 8, "value": 0.7755730152130127}, {"from": 1, "title": "Edge from 1 to 9\u003cbr\u003eSimilarity: 0.78", "to": 9, "value": 0.7755730152130127}, {"from": 1, "title": "Edge from 1 to 11\u003cbr\u003eSimilarity: 0.76", "to": 11, "value": 0.7630692720413208}, {"from": 1, "title": "Edge from 1 to 13\u003cbr\u003eSimilarity: 0.76", "to": 13, "value": 0.7630692720413208}, {"from": 1, "title": "Edge from 1 to 15\u003cbr\u003eSimilarity: 0.78", "to": 15, "value": 0.7755730152130127}, {"from": 1, "title": "Edge from 1 to 17\u003cbr\u003eSimilarity: 0.78", "to": 17, "value": 0.7755730152130127}, {"from": 1, "title": "Edge from 1 to 19\u003cbr\u003eSimilarity: 0.78", "to": 19, "value": 0.7755730152130127}, {"from": 1, "title": "Edge from 1 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 1, "title": "Edge from 1 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 1, "title": "Edge from 1 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}, {"from": 2, "title": "Edge from 2 to 4\u003cbr\u003eSimilarity: 0.78", "to": 4, "value": 0.7755730152130127}, {"from": 2, "title": "Edge from 2 to 5\u003cbr\u003eSimilarity: 0.74", "to": 5, "value": 0.7446007132530212}, {"from": 2, "title": "Edge from 2 to 6\u003cbr\u003eSimilarity: 0.74", "to": 6, "value": 0.7446007132530212}, {"from": 2, "title": "Edge from 2 to 7\u003cbr\u003eSimilarity: 0.78", "to": 7, "value": 0.7755730152130127}, {"from": 2, "title": "Edge from 2 to 10\u003cbr\u003eSimilarity: 0.78", "to": 10, "value": 0.7755730152130127}, {"from": 2, "title": "Edge from 2 to 11\u003cbr\u003eSimilarity: 0.74", "to": 11, "value": 0.7446007132530212}, {"from": 2, "title": "Edge from 2 to 12\u003cbr\u003eSimilarity: 0.78", "to": 12, "value": 0.7755730152130127}, {"from": 2, "title": "Edge from 2 to 13\u003cbr\u003eSimilarity: 0.74", "to": 13, "value": 0.7446007132530212}, {"from": 2, "title": "Edge from 2 to 14\u003cbr\u003eSimilarity: 0.78", "to": 14, "value": 0.7755730152130127}, {"from": 2, "title": "Edge from 2 to 16\u003cbr\u003eSimilarity: 0.78", "to": 16, "value": 0.7755730152130127}, {"from": 2, "title": "Edge from 2 to 18\u003cbr\u003eSimilarity: 0.78", "to": 18, "value": 0.7755730152130127}, {"from": 2, "title": "Edge from 2 to 20\u003cbr\u003eSimilarity: 0.78", "to": 20, "value": 0.7755730152130127}, {"from": 2, "title": "Edge from 2 to 21\u003cbr\u003eSimilarity: 0.74", "to": 21, "value": 0.7446007132530212}, {"from": 2, "title": "Edge from 2 to 22\u003cbr\u003eSimilarity: 0.74", "to": 22, "value": 0.7446007132530212}, {"from": 2, "title": "Edge from 2 to 23\u003cbr\u003eSimilarity: 0.74", "to": 23, "value": 0.7446007132530212}, {"from": 3, "title": "Edge from 3 to 4\u003cbr\u003eSimilarity: 0.78", "to": 4, "value": 0.7755730152130127}, {"from": 3, "title": "Edge from 3 to 5\u003cbr\u003eSimilarity: 0.74", "to": 5, "value": 0.7446007132530212}, {"from": 3, "title": "Edge from 3 to 6\u003cbr\u003eSimilarity: 0.74", "to": 6, "value": 0.7446007132530212}, {"from": 3, "title": "Edge from 3 to 7\u003cbr\u003eSimilarity: 0.78", "to": 7, "value": 0.7755730152130127}, {"from": 3, "title": "Edge from 3 to 10\u003cbr\u003eSimilarity: 0.78", "to": 10, "value": 0.7755730152130127}, {"from": 3, "title": "Edge from 3 to 11\u003cbr\u003eSimilarity: 0.74", "to": 11, "value": 0.7446007132530212}, {"from": 3, "title": "Edge from 3 to 12\u003cbr\u003eSimilarity: 0.78", "to": 12, "value": 0.7755730152130127}, {"from": 3, "title": "Edge from 3 to 13\u003cbr\u003eSimilarity: 0.74", "to": 13, "value": 0.7446007132530212}, {"from": 3, "title": "Edge from 3 to 14\u003cbr\u003eSimilarity: 0.78", "to": 14, "value": 0.7755730152130127}, {"from": 3, "title": "Edge from 3 to 16\u003cbr\u003eSimilarity: 0.78", "to": 16, "value": 0.7755730152130127}, {"from": 3, "title": "Edge from 3 to 18\u003cbr\u003eSimilarity: 0.78", "to": 18, "value": 0.7755730152130127}, {"from": 3, "title": "Edge from 3 to 20\u003cbr\u003eSimilarity: 0.78", "to": 20, "value": 0.7755730152130127}, {"from": 3, "title": "Edge from 3 to 21\u003cbr\u003eSimilarity: 0.74", "to": 21, "value": 0.7446007132530212}, {"from": 3, "title": "Edge from 3 to 22\u003cbr\u003eSimilarity: 0.74", "to": 22, "value": 0.7446007132530212}, {"from": 3, "title": "Edge from 3 to 23\u003cbr\u003eSimilarity: 0.74", "to": 23, "value": 0.7446007132530212}, {"from": 4, "title": "Edge from 4 to 5\u003cbr\u003eSimilarity: 0.76", "to": 5, "value": 0.7630692720413208}, {"from": 4, "title": "Edge from 4 to 6\u003cbr\u003eSimilarity: 0.76", "to": 6, "value": 0.7630692720413208}, {"from": 4, "title": "Edge from 4 to 8\u003cbr\u003eSimilarity: 0.78", "to": 8, "value": 0.7755730152130127}, {"from": 4, "title": "Edge from 4 to 9\u003cbr\u003eSimilarity: 0.78", "to": 9, "value": 0.7755730152130127}, {"from": 4, "title": "Edge from 4 to 11\u003cbr\u003eSimilarity: 0.76", "to": 11, "value": 0.7630692720413208}, {"from": 4, "title": "Edge from 4 to 13\u003cbr\u003eSimilarity: 0.76", "to": 13, "value": 0.7630692720413208}, {"from": 4, "title": "Edge from 4 to 15\u003cbr\u003eSimilarity: 0.78", "to": 15, "value": 0.7755730152130127}, {"from": 4, "title": "Edge from 4 to 17\u003cbr\u003eSimilarity: 0.78", "to": 17, "value": 0.7755730152130127}, {"from": 4, "title": "Edge from 4 to 19\u003cbr\u003eSimilarity: 0.78", "to": 19, "value": 0.7755730152130127}, {"from": 4, "title": "Edge from 4 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 4, "title": "Edge from 4 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 4, "title": "Edge from 4 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}, {"from": 5, "title": "Edge from 5 to 7\u003cbr\u003eSimilarity: 0.76", "to": 7, "value": 0.7630692720413208}, {"from": 5, "title": "Edge from 5 to 8\u003cbr\u003eSimilarity: 0.74", "to": 8, "value": 0.7446007132530212}, {"from": 5, "title": "Edge from 5 to 9\u003cbr\u003eSimilarity: 0.74", "to": 9, "value": 0.7446007132530212}, {"from": 5, "title": "Edge from 5 to 10\u003cbr\u003eSimilarity: 0.76", "to": 10, "value": 0.7630692720413208}, {"from": 5, "title": "Edge from 5 to 12\u003cbr\u003eSimilarity: 0.76", "to": 12, "value": 0.7630692720413208}, {"from": 5, "title": "Edge from 5 to 14\u003cbr\u003eSimilarity: 0.76", "to": 14, "value": 0.7630692720413208}, {"from": 5, "title": "Edge from 5 to 15\u003cbr\u003eSimilarity: 0.74", "to": 15, "value": 0.7446007132530212}, {"from": 5, "title": "Edge from 5 to 16\u003cbr\u003eSimilarity: 0.76", "to": 16, "value": 0.7630692720413208}, {"from": 5, "title": "Edge from 5 to 17\u003cbr\u003eSimilarity: 0.74", "to": 17, "value": 0.7446007132530212}, {"from": 5, "title": "Edge from 5 to 18\u003cbr\u003eSimilarity: 0.76", "to": 18, "value": 0.7630692720413208}, {"from": 5, "title": "Edge from 5 to 19\u003cbr\u003eSimilarity: 0.74", "to": 19, "value": 0.7446007132530212}, {"from": 5, "title": "Edge from 5 to 20\u003cbr\u003eSimilarity: 0.76", "to": 20, "value": 0.7630692720413208}, {"from": 6, "title": "Edge from 6 to 7\u003cbr\u003eSimilarity: 0.76", "to": 7, "value": 0.7630692720413208}, {"from": 6, "title": "Edge from 6 to 8\u003cbr\u003eSimilarity: 0.74", "to": 8, "value": 0.7446007132530212}, {"from": 6, "title": "Edge from 6 to 9\u003cbr\u003eSimilarity: 0.74", "to": 9, "value": 0.7446007132530212}, {"from": 6, "title": "Edge from 6 to 10\u003cbr\u003eSimilarity: 0.76", "to": 10, "value": 0.7630692720413208}, {"from": 6, "title": "Edge from 6 to 12\u003cbr\u003eSimilarity: 0.76", "to": 12, "value": 0.7630692720413208}, {"from": 6, "title": "Edge from 6 to 14\u003cbr\u003eSimilarity: 0.76", "to": 14, "value": 0.7630692720413208}, {"from": 6, "title": "Edge from 6 to 15\u003cbr\u003eSimilarity: 0.74", "to": 15, "value": 0.7446007132530212}, {"from": 6, "title": "Edge from 6 to 16\u003cbr\u003eSimilarity: 0.76", "to": 16, "value": 0.7630692720413208}, {"from": 6, "title": "Edge from 6 to 17\u003cbr\u003eSimilarity: 0.74", "to": 17, "value": 0.7446007132530212}, {"from": 6, "title": "Edge from 6 to 18\u003cbr\u003eSimilarity: 0.76", "to": 18, "value": 0.7630692720413208}, {"from": 6, "title": "Edge from 6 to 19\u003cbr\u003eSimilarity: 0.74", "to": 19, "value": 0.7446007132530212}, {"from": 6, "title": "Edge from 6 to 20\u003cbr\u003eSimilarity: 0.76", "to": 20, "value": 0.7630692720413208}, {"from": 7, "title": "Edge from 7 to 8\u003cbr\u003eSimilarity: 0.78", "to": 8, "value": 0.7755730152130127}, {"from": 7, "title": "Edge from 7 to 9\u003cbr\u003eSimilarity: 0.78", "to": 9, "value": 0.7755730152130127}, {"from": 7, "title": "Edge from 7 to 11\u003cbr\u003eSimilarity: 0.76", "to": 11, "value": 0.7630692720413208}, {"from": 7, "title": "Edge from 7 to 13\u003cbr\u003eSimilarity: 0.76", "to": 13, "value": 0.7630692720413208}, {"from": 7, "title": "Edge from 7 to 15\u003cbr\u003eSimilarity: 0.78", "to": 15, "value": 0.7755730152130127}, {"from": 7, "title": "Edge from 7 to 17\u003cbr\u003eSimilarity: 0.78", "to": 17, "value": 0.7755730152130127}, {"from": 7, "title": "Edge from 7 to 19\u003cbr\u003eSimilarity: 0.78", "to": 19, "value": 0.7755730152130127}, {"from": 7, "title": "Edge from 7 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 7, "title": "Edge from 7 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 7, "title": "Edge from 7 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}, {"from": 8, "title": "Edge from 8 to 10\u003cbr\u003eSimilarity: 0.78", "to": 10, "value": 0.7755730152130127}, {"from": 8, "title": "Edge from 8 to 11\u003cbr\u003eSimilarity: 0.74", "to": 11, "value": 0.7446007132530212}, {"from": 8, "title": "Edge from 8 to 12\u003cbr\u003eSimilarity: 0.78", "to": 12, "value": 0.7755730152130127}, {"from": 8, "title": "Edge from 8 to 13\u003cbr\u003eSimilarity: 0.74", "to": 13, "value": 0.7446007132530212}, {"from": 8, "title": "Edge from 8 to 14\u003cbr\u003eSimilarity: 0.78", "to": 14, "value": 0.7755730152130127}, {"from": 8, "title": "Edge from 8 to 16\u003cbr\u003eSimilarity: 0.78", "to": 16, "value": 0.7755730152130127}, {"from": 8, "title": "Edge from 8 to 18\u003cbr\u003eSimilarity: 0.78", "to": 18, "value": 0.7755730152130127}, {"from": 8, "title": "Edge from 8 to 20\u003cbr\u003eSimilarity: 0.78", "to": 20, "value": 0.7755730152130127}, {"from": 8, "title": "Edge from 8 to 21\u003cbr\u003eSimilarity: 0.74", "to": 21, "value": 0.7446007132530212}, {"from": 8, "title": "Edge from 8 to 22\u003cbr\u003eSimilarity: 0.74", "to": 22, "value": 0.7446007132530212}, {"from": 8, "title": "Edge from 8 to 23\u003cbr\u003eSimilarity: 0.74", "to": 23, "value": 0.7446007132530212}, {"from": 9, "title": "Edge from 9 to 10\u003cbr\u003eSimilarity: 0.78", "to": 10, "value": 0.7755730152130127}, {"from": 9, "title": "Edge from 9 to 11\u003cbr\u003eSimilarity: 0.74", "to": 11, "value": 0.7446007132530212}, {"from": 9, "title": "Edge from 9 to 12\u003cbr\u003eSimilarity: 0.78", "to": 12, "value": 0.7755730152130127}, {"from": 9, "title": "Edge from 9 to 13\u003cbr\u003eSimilarity: 0.74", "to": 13, "value": 0.7446007132530212}, {"from": 9, "title": "Edge from 9 to 14\u003cbr\u003eSimilarity: 0.78", "to": 14, "value": 0.7755730152130127}, {"from": 9, "title": "Edge from 9 to 16\u003cbr\u003eSimilarity: 0.78", "to": 16, "value": 0.7755730152130127}, {"from": 9, "title": "Edge from 9 to 18\u003cbr\u003eSimilarity: 0.78", "to": 18, "value": 0.7755730152130127}, {"from": 9, "title": "Edge from 9 to 20\u003cbr\u003eSimilarity: 0.78", "to": 20, "value": 0.7755730152130127}, {"from": 9, "title": "Edge from 9 to 21\u003cbr\u003eSimilarity: 0.74", "to": 21, "value": 0.7446007132530212}, {"from": 9, "title": "Edge from 9 to 22\u003cbr\u003eSimilarity: 0.74", "to": 22, "value": 0.7446007132530212}, {"from": 9, "title": "Edge from 9 to 23\u003cbr\u003eSimilarity: 0.74", "to": 23, "value": 0.7446007132530212}, {"from": 10, "title": "Edge from 10 to 11\u003cbr\u003eSimilarity: 0.76", "to": 11, "value": 0.7630692720413208}, {"from": 10, "title": "Edge from 10 to 13\u003cbr\u003eSimilarity: 0.76", "to": 13, "value": 0.7630692720413208}, {"from": 10, "title": "Edge from 10 to 15\u003cbr\u003eSimilarity: 0.78", "to": 15, "value": 0.7755730152130127}, {"from": 10, "title": "Edge from 10 to 17\u003cbr\u003eSimilarity: 0.78", "to": 17, "value": 0.7755730152130127}, {"from": 10, "title": "Edge from 10 to 19\u003cbr\u003eSimilarity: 0.78", "to": 19, "value": 0.7755730152130127}, {"from": 10, "title": "Edge from 10 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 10, "title": "Edge from 10 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 10, "title": "Edge from 10 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}, {"from": 11, "title": "Edge from 11 to 12\u003cbr\u003eSimilarity: 0.76", "to": 12, "value": 0.7630692720413208}, {"from": 11, "title": "Edge from 11 to 14\u003cbr\u003eSimilarity: 0.76", "to": 14, "value": 0.7630692720413208}, {"from": 11, "title": "Edge from 11 to 15\u003cbr\u003eSimilarity: 0.74", "to": 15, "value": 0.7446007132530212}, {"from": 11, "title": "Edge from 11 to 16\u003cbr\u003eSimilarity: 0.76", "to": 16, "value": 0.7630692720413208}, {"from": 11, "title": "Edge from 11 to 17\u003cbr\u003eSimilarity: 0.74", "to": 17, "value": 0.7446007132530212}, {"from": 11, "title": "Edge from 11 to 18\u003cbr\u003eSimilarity: 0.76", "to": 18, "value": 0.7630692720413208}, {"from": 11, "title": "Edge from 11 to 19\u003cbr\u003eSimilarity: 0.74", "to": 19, "value": 0.7446007132530212}, {"from": 11, "title": "Edge from 11 to 20\u003cbr\u003eSimilarity: 0.76", "to": 20, "value": 0.7630692720413208}, {"from": 12, "title": "Edge from 12 to 13\u003cbr\u003eSimilarity: 0.76", "to": 13, "value": 0.7630692720413208}, {"from": 12, "title": "Edge from 12 to 15\u003cbr\u003eSimilarity: 0.78", "to": 15, "value": 0.7755730152130127}, {"from": 12, "title": "Edge from 12 to 17\u003cbr\u003eSimilarity: 0.78", "to": 17, "value": 0.7755730152130127}, {"from": 12, "title": "Edge from 12 to 19\u003cbr\u003eSimilarity: 0.78", "to": 19, "value": 0.7755730152130127}, {"from": 12, "title": "Edge from 12 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 12, "title": "Edge from 12 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 12, "title": "Edge from 12 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}, {"from": 13, "title": "Edge from 13 to 14\u003cbr\u003eSimilarity: 0.76", "to": 14, "value": 0.7630692720413208}, {"from": 13, "title": "Edge from 13 to 15\u003cbr\u003eSimilarity: 0.74", "to": 15, "value": 0.7446007132530212}, {"from": 13, "title": "Edge from 13 to 16\u003cbr\u003eSimilarity: 0.76", "to": 16, "value": 0.7630692720413208}, {"from": 13, "title": "Edge from 13 to 17\u003cbr\u003eSimilarity: 0.74", "to": 17, "value": 0.7446007132530212}, {"from": 13, "title": "Edge from 13 to 18\u003cbr\u003eSimilarity: 0.76", "to": 18, "value": 0.7630692720413208}, {"from": 13, "title": "Edge from 13 to 19\u003cbr\u003eSimilarity: 0.74", "to": 19, "value": 0.7446007132530212}, {"from": 13, "title": "Edge from 13 to 20\u003cbr\u003eSimilarity: 0.76", "to": 20, "value": 0.7630692720413208}, {"from": 14, "title": "Edge from 14 to 15\u003cbr\u003eSimilarity: 0.78", "to": 15, "value": 0.7755730152130127}, {"from": 14, "title": "Edge from 14 to 17\u003cbr\u003eSimilarity: 0.78", "to": 17, "value": 0.7755730152130127}, {"from": 14, "title": "Edge from 14 to 19\u003cbr\u003eSimilarity: 0.78", "to": 19, "value": 0.7755730152130127}, {"from": 14, "title": "Edge from 14 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 14, "title": "Edge from 14 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 14, "title": "Edge from 14 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}, {"from": 15, "title": "Edge from 15 to 16\u003cbr\u003eSimilarity: 0.78", "to": 16, "value": 0.7755730152130127}, {"from": 15, "title": "Edge from 15 to 18\u003cbr\u003eSimilarity: 0.78", "to": 18, "value": 0.7755730152130127}, {"from": 15, "title": "Edge from 15 to 20\u003cbr\u003eSimilarity: 0.78", "to": 20, "value": 0.7755730152130127}, {"from": 15, "title": "Edge from 15 to 21\u003cbr\u003eSimilarity: 0.74", "to": 21, "value": 0.7446007132530212}, {"from": 15, "title": "Edge from 15 to 22\u003cbr\u003eSimilarity: 0.74", "to": 22, "value": 0.7446007132530212}, {"from": 15, "title": "Edge from 15 to 23\u003cbr\u003eSimilarity: 0.74", "to": 23, "value": 0.7446007132530212}, {"from": 16, "title": "Edge from 16 to 17\u003cbr\u003eSimilarity: 0.78", "to": 17, "value": 0.7755730152130127}, {"from": 16, "title": "Edge from 16 to 19\u003cbr\u003eSimilarity: 0.78", "to": 19, "value": 0.7755730152130127}, {"from": 16, "title": "Edge from 16 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 16, "title": "Edge from 16 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 16, "title": "Edge from 16 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}, {"from": 17, "title": "Edge from 17 to 18\u003cbr\u003eSimilarity: 0.78", "to": 18, "value": 0.7755730152130127}, {"from": 17, "title": "Edge from 17 to 20\u003cbr\u003eSimilarity: 0.78", "to": 20, "value": 0.7755730152130127}, {"from": 17, "title": "Edge from 17 to 21\u003cbr\u003eSimilarity: 0.74", "to": 21, "value": 0.7446007132530212}, {"from": 17, "title": "Edge from 17 to 22\u003cbr\u003eSimilarity: 0.74", "to": 22, "value": 0.7446007132530212}, {"from": 17, "title": "Edge from 17 to 23\u003cbr\u003eSimilarity: 0.74", "to": 23, "value": 0.7446007132530212}, {"from": 18, "title": "Edge from 18 to 19\u003cbr\u003eSimilarity: 0.78", "to": 19, "value": 0.7755730152130127}, {"from": 18, "title": "Edge from 18 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 18, "title": "Edge from 18 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 18, "title": "Edge from 18 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}, {"from": 19, "title": "Edge from 19 to 20\u003cbr\u003eSimilarity: 0.78", "to": 20, "value": 0.7755730152130127}, {"from": 19, "title": "Edge from 19 to 21\u003cbr\u003eSimilarity: 0.74", "to": 21, "value": 0.7446007132530212}, {"from": 19, "title": "Edge from 19 to 22\u003cbr\u003eSimilarity: 0.74", "to": 22, "value": 0.7446007132530212}, {"from": 19, "title": "Edge from 19 to 23\u003cbr\u003eSimilarity: 0.74", "to": 23, "value": 0.7446007132530212}, {"from": 20, "title": "Edge from 20 to 21\u003cbr\u003eSimilarity: 0.76", "to": 21, "value": 0.7630692720413208}, {"from": 20, "title": "Edge from 20 to 22\u003cbr\u003eSimilarity: 0.76", "to": 22, "value": 0.7630692720413208}, {"from": 20, "title": "Edge from 20 to 23\u003cbr\u003eSimilarity: 0.76", "to": 23, "value": 0.7630692720413208}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -80000,
+            "springConstant": 0.001,
+            "springLength": 250
+        },
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,24 @@
+name: ba
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - matplotlib
+  - numpy
+  - langchain
+  - langchain_community
+  - langchain_core
+  - pip
+  - jupyter lab
+  - pandas
+  - biopython
+  - folium
+  - geopandas
+  - pycountry
+  - geopy
+  - geojson
+  - einops
+  - nomic
+  - pyvis
+  - seaborn
+  - itables
