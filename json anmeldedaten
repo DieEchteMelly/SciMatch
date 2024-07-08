@@ -1,9 +1,0 @@
-import json  
-     
-# define Python dictionary
-account = {'email': 'melanie.altmann@studium.uni-hamburg.de', 'password': 'be$oPe96'}
-
-# Convert Python to JSON  
-account_login = json.dumps(account, indent = 4) 
-
-print(account_login)

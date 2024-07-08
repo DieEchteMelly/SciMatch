@@ -29,6 +29,7 @@ with inputdata:
                 if docs is not None:
                     parsed_info = sci_match.document_to_df(docs)
                     pmid_authors_df = sci_match.get_authorsInfo_from_parsed_Info(parsed_info)
+                    paper_main_authors, pmid_authors_df = sci_match.define_main_authors(parsed_info, pmid_authors_df)
                     st.success('Done!')
                 else:
                     st.error("No documents found. Please check your input and try again.")
@@ -42,16 +43,15 @@ with results:
 
 with visualization:
     st.header('Here are your matches!')
+    st.subheader('See where your matches are in the world!')
+    if 'pmid_authors_df' in locals():
+        world_map = sci_match.authors_on_worldmap(pmid_authors_df)
+        folium_static(world_map) 
 
-    map_col, net_col = st.columns(2)
-    with map_col:
-        st.subheader('See where your matches are in the world!')
-        if 'pmid_authors_df' in locals():
-            world_map = sci_match.authors_on_worldmap(pmid_authors_df)
-            folium_static(world_map) 
-
-    with net_col:
-        st.subheader('Find the closest semantic similarity match here!')
-        if 'pmid_authors_df' in locals():
-            network = sci_match.authors_in_network(pmid_authors_df, parsed_info, paper_main_authors)
-            network
+    st.subheader('Find the closest semantic similarity match here!')
+    if 'pmid_authors_df' in locals():
+        network = sci_match.authors_in_network(pmid_authors_df, parsed_info, paper_main_authors)
+        network.show('graph.html')
+        with open('graph.html', 'r') as f:
+            html_string = f.read()
+        st.components.v1.html(html_string, width=800, height=600)

@@ -24,10 +24,9 @@ def parsedInfotoDF(docs):
     parsedInfo.set_index('uid') # set uid as index
     return parsedInfo
 
-def search_for_paper_main_authors(parsedInfo):
-
+def search_for_paper_main_authors(parsedInfo, pmid_authors_df):
     Entrez.email = "melanie.altmann@studium.uni-hamburg.de"
-    PubMedUIDs = parsedInfo['uid'].tolist() #create list of PubMed-UIDs from parsedInfo df
+    PubMedUIDs = parsedInfo['uid'].tolist()  # Create list of PubMed-UIDs from parsedInfo df
     handle = Entrez.efetch(db="pubmed", id=PubMedUIDs, retmode="xml")
     records = Entrez.read(handle)
     pmid_authors = {}
@@ -40,34 +39,38 @@ def search_for_paper_main_authors(parsedInfo):
             affiliations = [info['Affiliation'] for info in author['AffiliationInfo']]
             author_affiliations.append(f"{author['ForeName']} {author['LastName']}: {', '.join(affiliations)}")
         pmid_authors[pmid] = author_affiliations
-    #the following part is neccasary for highlighting the foírst and the last author in my network
+
     main_authors = []
     for uid, authors in pmid_authors_df.iterrows():
         first_author = None
         last_author = None
 
-    # Get the first author
-    for author in authors:
-        if author:  # Check if the author string is not None or empty
-            first_author = author
-            break
+        # Get the first author
+        for author in authors:
+            if author:  # Check if the author string is not None or empty
+                first_author = author
+                break
 
-    # Get the last author
-    for author in reversed(authors):
-        if author:  # Check if the author string is not None or empty
-            last_author = author
-            break
+        # Get the last author
+        for author in reversed(authors):
+            if author:  # Check if the author string is not None or empty
+                last_author = author
+                break
 
-    main_authors.append({'uid': uid, 'first_author': first_author, 'last_author': last_author})
+        main_authors.append({'uid': uid, 'first_author': first_author, 'last_author': last_author})
 
     # Create DataFrame from the main_authors list
     paper_main_authors = pd.DataFrame(main_authors)
 
+    # Ensure the first_author and last_author fields are of string type
+    paper_main_authors['first_author'] = paper_main_authors['first_author'].astype(str)
+    paper_main_authors['last_author'] = paper_main_authors['last_author'].astype(str)
+
     # Clean the first_author and last_author fields
     paper_main_authors['first_author'] = paper_main_authors['first_author'].str.split(':').str[0].str.strip()
     paper_main_authors['last_author'] = paper_main_authors['last_author'].str.split(':').str[0].str.strip()
-    paper_main_authors.to_pickle("./paper_main_authors.pkl") 
-    return paper_main_authors
+
+    return paper_main_authors, pmid_authors_df
 
 def create_pmid_authors_df(parsedInfo):
     Entrez.email = "melanie.altmann@studium.uni-hamburg.de"

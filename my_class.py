@@ -30,8 +30,12 @@ class SciMatch:
         pmid_authors_df = pmid_authors_df.dropna(subset=['latitude', 'longitude'])
         return draw_map(pmid_authors_df)
     
-    def define_main_authors(self, parsedInfo):
-        return search_for_paper_main_authors(parsedInfo)
+    def define_main_authors(self, parsedInfo, pmid_authors_df):
+        paper_main_authors, updated_pmid_authors_df = search_for_paper_main_authors(parsedInfo, pmid_authors_df)
+        print(f"Debug: define_main_authors() paper_main_authors columns: {paper_main_authors.columns}")
+        return paper_main_authors, updated_pmid_authors_df
 
     def authors_in_network(self, pmid_authors_df, parsedInfo, paper_main_authors):
+        print(f"Debug: authors_in_network() paper_main_authors type: {type(paper_main_authors)}")
+        print(f"Debug: authors_in_network() paper_main_authors columns: {paper_main_authors.columns}")
         return lets_embed(pmid_authors_df, parsedInfo, paper_main_authors)
