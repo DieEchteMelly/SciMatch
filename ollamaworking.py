@@ -21,7 +21,7 @@ def documentloader_fromprompt(research_topic, top_k):
 
 
         host = f"{protocol}://{hostname}"
-
+        
         account = {'email': os.getenv('ollama_user'), 'password': os.getenv('ollama_pw')}
         auth_url = f"{host}/api/v1/auths/signin"
         api_url = f"{host}/ollama"
