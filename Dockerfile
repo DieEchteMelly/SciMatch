@@ -3,8 +3,6 @@ FROM python:3.11-slim-buster
 # Set the working directory in the container
 WORKDIR /app
 
-
-
 # Install necessary packages
 RUN apt-get update && \
     apt-get -y install gcc mono-mcs cron && \
@@ -13,7 +11,7 @@ RUN apt-get update && \
 # Copy requirements file
 COPY requirements.txt ./
 
-RUN ls -la ./
+#RUN ls -la ./
 
 # Upgrade pip and setuptools
 RUN pip install --upgrade pip setuptools
@@ -23,6 +21,7 @@ RUN pip install -r requirements.txt
 
 # Copy the current directory contents into the container at /app
 COPY . /app
+RUN ls -la /app
 
 # Add the app directory to PYTHONPATH
 ENV PYTHONPATH="/app:${PYTHONPATH:-}"
@@ -31,4 +30,5 @@ ENV PYTHONPATH="/app:${PYTHONPATH:-}"
 EXPOSE 8501
 
 # Command to run the application
-CMD ["streamlit", "run", "main.py"]
+CMD ["streamlit", "run", "/app/main.py"]
+
