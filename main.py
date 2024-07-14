@@ -13,11 +13,11 @@ with header:
     st.title('Welcome to SciMatch!')
     st.text('In this project, we aim to find your perfect scientific matches!')
     st.write("Whether you're seeking collaboration or curious about your competition, just describe your topic to us, and we will find the best results for you.")
-    st.write('SciMatch utilizes the LLM Ollama to search PubMed for publications based on your input. The results will identify scientists who have worked on these papers. You can view a basic list of these researchers, explore a world map to see where they are working globally, or analyze how closely related their work is.')
+    st.write('SciMatch utilizes Ollama to search PubMed for publications based on your input. The results will identify scientists who have worked on these papers. You can view a basic list of these researchers, explore a world map to see where they are working globally, or analyze how closely related their work is.')
 with inputdata:
     st.header('What are you looking for?')
     research_topic = st.text_input("Describe your research with an abstract, your title or throw in keywords:")
-    top_k = st.text_input("How many papers should we look for? The default is set to 5.")
+    top_k = st.slider("How many papers should we look for?", min_value=5, max_value=50, value=5, step=5)
     st.text('We are looking for your best matches. But good work takes a bit of time.')
 
     if research_topic:
@@ -39,7 +39,8 @@ with results:
     st.header('These are the scientists out there with the most similar research to yours:')
     if 'pmid_authors_df' in locals():
         st.dataframe(pmid_authors_df)
-        st.write('')
+        
+
 
 with visualization:
     st.header('Here are your matches!')

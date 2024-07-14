@@ -24,54 +24,6 @@ def parsedInfotoDF(docs):
     parsedInfo.set_index('uid') # set uid as index
     return parsedInfo
 
-def search_for_paper_main_authors(parsedInfo, pmid_authors_df):
-    Entrez.email = "melanie.altmann@studium.uni-hamburg.de"
-    PubMedUIDs = parsedInfo['uid'].tolist()  # Create list of PubMed-UIDs from parsedInfo df
-    handle = Entrez.efetch(db="pubmed", id=PubMedUIDs, retmode="xml")
-    records = Entrez.read(handle)
-    pmid_authors = {}
-
-    for record in records["PubmedArticle"]:
-        pmid = record["MedlineCitation"]["PMID"]
-        authors = record["MedlineCitation"]["Article"]["AuthorList"]
-        author_affiliations = []
-        for author in authors:
-            affiliations = [info['Affiliation'] for info in author['AffiliationInfo']]
-            author_affiliations.append(f"{author['ForeName']} {author['LastName']}: {', '.join(affiliations)}")
-        pmid_authors[pmid] = author_affiliations
-
-    main_authors = []
-    for uid, authors in pmid_authors_df.iterrows():
-        first_author = None
-        last_author = None
-
-        # Get the first author
-        for author in authors:
-            if author:  # Check if the author string is not None or empty
-                first_author = author
-                break
-
-        # Get the last author
-        for author in reversed(authors):
-            if author:  # Check if the author string is not None or empty
-                last_author = author
-                break
-
-        main_authors.append({'uid': uid, 'first_author': first_author, 'last_author': last_author})
-
-    # Create DataFrame from the main_authors list
-    paper_main_authors = pd.DataFrame(main_authors)
-
-    # Ensure the first_author and last_author fields are of string type
-    paper_main_authors['first_author'] = paper_main_authors['first_author'].astype(str)
-    paper_main_authors['last_author'] = paper_main_authors['last_author'].astype(str)
-
-    # Clean the first_author and last_author fields
-    paper_main_authors['first_author'] = paper_main_authors['first_author'].str.split(':').str[0].str.strip()
-    paper_main_authors['last_author'] = paper_main_authors['last_author'].str.split(':').str[0].str.strip()
-
-    return paper_main_authors, pmid_authors_df
-
 def create_pmid_authors_df(parsedInfo):
     Entrez.email = "melanie.altmann@studium.uni-hamburg.de"
     PubMedUIDs = parsedInfo['uid'].tolist()  # create list of PubMed-UIDs from parsedInfo df
@@ -92,13 +44,11 @@ def create_pmid_authors_df(parsedInfo):
                     'affiliation': affiliation,
                     'pubmedid': pmid
                 })
-
     pmid_authors_df = pd.DataFrame(author_data)
-    pmid_authors_df = pmid_authors_df.sort_values(by='lastname')
     def extract_country(affiliation):
         try:
             country = affiliation.split(',')[-1].strip()
-            country = country[:-1]
+            country = country.split('.')[0].strip()
             return country
         except:
             return None
@@ -141,7 +91,7 @@ def create_pmid_authors_df(parsedInfo):
     pmid_authors_df[['latitude', 'longitude']] = pmid_authors_df.apply(get_coordinates, axis=1)
     def merge_and_deduplicate(df):
         # Group by the specified columns
-        grouped = pmid_authors_df.groupby(['forename', 'lastname', 'pubmedid'])
+        grouped = df.groupby(['forename', 'lastname', 'pubmedid'])
         
         # Define a function to merge affiliations
         def merge_affiliations(group):
@@ -156,6 +106,51 @@ def create_pmid_authors_df(parsedInfo):
         return result
     pmid_authors_df = merge_and_deduplicate(pmid_authors_df)
     return pmid_authors_df
+
+def search_for_paper_main_authors(parsedInfo, pmid_authors_df):
+    # Set email for Entrez
+    Entrez.email = "melanie.altmann@studium.uni-hamburg.de"
+    # Create list of PubMed-UIDs from parsedInfo df
+    PubMedUIDs = parsedInfo['uid'].tolist()
+
+    # Fetch records from PubMed
+    handle = Entrez.efetch(db="pubmed", id=PubMedUIDs, retmode="xml")
+    records = Entrez.read(handle)
+    
+    pmid_authors = {}
+    main_authors = []
+
+    # Process each PubMedArticle
+    for record in records["PubmedArticle"]:
+        pmid = record["MedlineCitation"]["PMID"]
+        authors = record["MedlineCitation"]["Article"]["AuthorList"]
+        author_affiliations = []
+        
+        # Extract author names, affiliations, first author and last author
+
+        author_name_list = []
+        for author in authors:
+            affiliations = [info['Affiliation'] for info in author.get('AffiliationInfo', [])]
+            author_affiliations.append(f"{author.get('ForeName', '')} {author.get('LastName', '')}: {', '.join(affiliations)}")
+            author_name_list.append(f"{author.get('ForeName', '')} {author.get('LastName', '')}")
+        
+        main_authors.append({'uid': pmid, 'first_author': author_name_list[0], 'last_author': author_name_list[-1]})
+        pmid_authors[pmid] = author_affiliations
+                
+
+    # Create DataFrame from the main_authors list
+    paper_main_authors = pd.DataFrame(main_authors)
+
+    # Ensure the first_author and last_author fields are of string type
+    paper_main_authors['first_author'] = paper_main_authors['first_author'].astype(str)
+    paper_main_authors['last_author'] = paper_main_authors['last_author'].astype(str)
+
+    # Clean the first_author and last_author fields
+    paper_main_authors['first_author'] = paper_main_authors['first_author'].str.split(':').str[0].str.strip()
+    paper_main_authors['last_author'] = paper_main_authors['last_author'].str.split(':').str[0].str.strip()
+
+    return paper_main_authors, pmid_authors_df
+
 
 def draw_map(pmid_authors_df):
     pmid_authors_deduplicated_df = pmid_authors_df.copy()

@@ -7,7 +7,8 @@ import requests, json
 from langchain_community.vectorstores import FAISS
 import faiss
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity, cosine_distances
+from sklearn.preprocessing import normalize
 from pyvis.network import Network
 import pandas as pd
 import seaborn as sns
@@ -26,7 +27,7 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors):
     protocol = "https"
     hostname = "chat.cosy.bio"
     host = f"{protocol}://{hostname}"
-
+    
     account = {'email': os.getenv('ollama_user'), 'password': os.getenv('ollama_pw')}
     auth_url = f"{host}/api/v1/auths/signin"
     api_url = f"{host}/ollama"
@@ -38,19 +39,20 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors):
     ollama_embeddings = OllamaEmbeddings(base_url=api_url, model='nomic-embed-text', headers= {"Authorization": "Bearer " + jwt})
 
     loader = DataFrameLoader(authors_df, page_content_column="research")
-    documents=loader.load()
-    vectorstore = FAISS.from_documents(
-        documents,embedding=ollama_embeddings,
-    )
+    #documents=loader.load()
+    #vectorstore = FAISS.from_documents(
+    #    documents,embedding=ollama_embeddings,
+    #)
 
     #Perform a similarity search
-    query = authors_df["uid"]
-    results = vectorstore.similarity_search_with_score(query)
+    #query = authors_df["uid"]
+    #results = vectorstore.similarity_search_with_score(query)
     vector_db = FAISS.from_documents(loader.load(), ollama_embeddings)
     vector_db.save_local("test_net_embedding")
     #vector_db = FAISS.load_local("test_net_embedding", ollama_embeddings, allow_dangerous_deserialization=True)
     vectors = vector_db.index.reconstruct_n(0, vector_db.index.ntotal)
 
+    #similarity_matrix = normalize(cosine_similarity(vectors))
     similarity_matrix = cosine_similarity(vectors)
 
     #Create a DataFrame for the similarity matrix
@@ -58,7 +60,9 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors):
 
 
     # Convert the similarity matrix to a distance matrix
-    distance_matrix = 1 - similarity_matrix
+    #distance_matrix = 1 - similarity_matrix
+    distance_matrix = cosine_distances(vectors)
+
     # Apply DBSCAN
     dbscan = DBSCAN(metric='precomputed', eps=0.1, min_samples=2)
     dbscan.fit(distance_matrix)
@@ -68,7 +72,7 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors):
     authors_df['Cluster'] = cluster_labels
 
     # Convert the similarity DataFrame to float64
-    similarity_df = similarity_df.astype('float64')
+    similarity_df = similarity_df.astype('float64') 
 
     # Define a color palette for clusters
     num_clusters = authors_df['Cluster'].nunique()
@@ -95,7 +99,7 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors):
         if full_name in highlight_authors:
             size = 50  # Highlighted node size
         else:
-            size = 20  # Default node size
+            size = 35  # Default node size
             
         net.add_node(node, label=full_name, title=title, color=color, size=size)
 
@@ -107,7 +111,7 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors):
         for j, target in enumerate(similarity_df.columns):
             if i < j:  # Ensure each pair is considered only once
                 similarity = similarity_df.loc[source, target]
-                if similarity == 1:  # Only add edges with similarity of 1
+                if similarity >= 0.999:  # Only add edges with similarity of 1
                     source_name = f"{authors_df.loc[source, 'forename']} {authors_df.loc[source, 'lastname']}"
                     target_name = f"{authors_df.loc[target, 'forename']} {authors_df.loc[target, 'lastname']}"
                     edge_title = f"Edge from {source_name} to {target_name}. Similarity: {similarity:.2f}"
