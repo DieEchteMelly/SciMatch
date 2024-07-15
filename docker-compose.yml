@@ -11,3 +11,5 @@ services:
       - .env
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    restart: always  # Ensure the container always restarts
+
