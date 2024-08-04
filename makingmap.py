@@ -21,6 +21,7 @@ def parsedInfotoDF(docs):
         data_dicts.append(dict_of_document) #add this dict to the empty list
     data_dicts #shows list of dicts
     parsedInfo = pd.DataFrame.from_records(data_dicts) #create dataframe from the list of dicts
+    parsedInfo.to_csv("output.csv", index=False)
     parsedInfo.set_index('uid') # set uid as index
     return parsedInfo
 

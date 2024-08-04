@@ -37,14 +37,14 @@ def documentloader_fromprompt(research_topic, top_k):
 
         prompt = research_topic
         docs = retriever.invoke(prompt)
-
-        return docs
-        documents = your_document_loading_logic_here(research_topic, top_k)
-        if not documents:
+        
+        if not docs:
             print("Debug: No documents found")
             return None
-        print(f"Debug: Loaded {len(documents)} documents")
-        return documents
+
+        print(f"Debug: Loaded {len(docs)} documents")
+        return docs
+        
     except Exception as e:
         print(f"Error in documentloader_fromprompt: {str(e)}")
         return None

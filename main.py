@@ -37,27 +37,34 @@ with inputdata:
                 except ValueError as e:
                     st.error(str(e))
 
-    with results:
-        st.header('These are the scientists out there with the most similar research to yours:')
-        if 'pmid_authors_df' in locals():
-            st.dataframe(pmid_authors_df)
-            
+        with results:
+            st.subheader(f"These are the results for your input '{research_topic}'.")
+            st.subheader('These are the scientists out there with the most similar research to yours:')
+            if 'pmid_authors_df' in locals():
+                st.dataframe(pmid_authors_df)
+                
 
 
-    with visualization:
-        st.header('Here are your matches!')
-        st.subheader('See where your matches are in the world!')
-        st.write('You can explore the map to see where these scientists are located. By clicking on the location marker you can find out which scientists are located there.')
-        if 'pmid_authors_df' in locals():
-            world_map = sci_match.authors_on_worldmap(pmid_authors_df)
-            folium_static(world_map) 
-            
+        with visualization:
+            #st.header('Here are your matches!')
+            st.subheader('See where your matches are in the world!')
+            st.write('You can explore the map to see where these scientists are located. By clicking on the location marker you can find out which scientists are located there.')
+            if 'pmid_authors_df' in locals():
+                world_map = sci_match.authors_on_worldmap(pmid_authors_df)
+                folium_static(world_map) 
+                
 
-        st.subheader('Find the closest semantic similarity match here!')
-        st.write('Here you can see the semantic similarity between the papers and thereby between the authors. Authors in one cluster are authors of one paper. The highlighted authors in one clusters arethe first and last author of the paper. The closer two clusters are, the more similar they are. You might need to zoom out at the beginning in order to see all clusters.')
-        if 'pmid_authors_df' in locals():
-            network = sci_match.authors_in_network(pmid_authors_df, parsed_info, paper_main_authors)
-            network.show('graph.html')
-            with open('graph.html', 'r') as f:
-                html_string = f.read()
-            st.components.v1.html(html_string, width=800, height=600)
+            st.subheader('Find the closest semantic similarity match here!')
+            st.write('Here you can see the semantic similarity between the papers and thereby between the authors. Authors in one cluster are authors of one paper. The highlighted authors in one clusters arethe first and last author of the paper. The closer two clusters are, the more similar they are. You might need to zoom out at the beginning in order to see all clusters.')
+            if 'pmid_authors_df' in locals():
+                network = sci_match.authors_in_network(pmid_authors_df, parsed_info, paper_main_authors)
+
+                if network:
+                    network.show('graph.html')
+                else:
+                    print("Error: Network is None")
+
+                #network.show('graph.html')
+                with open('graph.html', 'r') as f:
+                    html_string = f.read()
+                st.components.v1.html(html_string, width=800, height=600)
