@@ -40,8 +40,7 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors, ss_treshold):
     hostname = "chat.cosy.bio"
     host = f"{protocol}://{hostname}"
     
-    account = {'email':'melanie.altmann@studium.uni-hamburg.de', 'password':'be$oPe96'}
-    #account = {'email': os.getenv('ollama_user'), 'password': os.getenv('ollama_pw')}
+    account = {'email': os.getenv('ollama_user'), 'password': os.getenv('ollama_pw')}
     auth_url = f"{host}/api/v1/auths/signin"
     api_url = f"{host}/ollama"
 
