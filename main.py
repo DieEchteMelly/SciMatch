@@ -3,7 +3,6 @@ from my_class import SciMatch
 from streamlit_folium import folium_static
 import os
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
 
 header = st.container()
 inputdata = st.container()
@@ -61,21 +60,7 @@ with inputdata:
                 if 'displaying_df' in locals():
                     st.write("You want to do a deep dive about an author? By clicking on the link you will come straight to the paper and there you can find the author.")
                     st.markdown(displaying_df.to_html(escape=False, index=False), unsafe_allow_html=True)
-                
-            #Set up the AgGrid with clickable links and filtering
-            #gb = GridOptionsBuilder.from_dataframe(displaying_df)
-            #gb.configure_column("pubmedid_link", header_name="PubMed ID", cellRenderer='html')
-            #gb.configure_default_column(filterable=True, sortable=True)
-            #grid_options = gb.build()
-
-            # Display the interactive grid
-            #grid_response = AgGrid(displaying_df, gridOptions=grid_options, enable_enterprise_modules=False, height=200, fit_columns_on_grid_load=True, update_mode=GridUpdateMode.MODEL_CHANGED, data_return_mode=DataReturnMode.FILTERED)
             
-            #filtered_df = pd.DataFrame(grid_response['data'])
-            #st.write(filtered_df)  # Optionally display the filtered data'''
-                
-
-
         with visualization:
             st.subheader('See where your matches are in the world!')
             st.write('You can explore the map to see where these scientists are located. By clicking on the location marker you can find out which scientists are located there.')
