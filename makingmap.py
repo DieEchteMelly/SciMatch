@@ -21,7 +21,6 @@ def parsedInfotoDF(docs):
         data_dicts.append(dict_of_document) #add this dict to the empty list
     data_dicts #shows list of dicts
     parsedInfo = pd.DataFrame.from_records(data_dicts) #create dataframe from the list of dicts
-    parsedInfo.to_csv("output.csv", index=False)
     parsedInfo.set_index('uid') # set uid as index
     return parsedInfo
 
@@ -92,17 +91,19 @@ def create_pmid_authors_df(parsedInfo):
     pmid_authors_df[['latitude', 'longitude']] = pmid_authors_df.apply(get_coordinates, axis=1)
     def merge_and_deduplicate(df):
         # Group by the specified columns
-        grouped = df.groupby(['forename', 'lastname', 'pubmedid'])
+        grouped = df.groupby(['forename', 'lastname'])
         
-        # Define a function to merge affiliations
-        def merge_affiliations(group):
-            merged_affiliation = ' '.join(group['affiliation'].dropna().unique())
+        # Define a function to merge affiliations and pubmedid
+        def merge_info(group):
+            merged_affiliation = '; '.join(group['affiliation'].dropna().unique())
+            merged_pubmedid = ', '.join(group['pubmedid'].astype(str).unique())
             first_row = group.iloc[0]
             first_row['affiliation'] = merged_affiliation
+            first_row['pubmedid'] = merged_pubmedid
             return first_row
         
         # Apply the merging function and reset the index
-        result = grouped.apply(merge_affiliations).reset_index(drop=True)
+        result = grouped.apply(merge_info).reset_index(drop=True)
         
         return result
     pmid_authors_df = merge_and_deduplicate(pmid_authors_df)
@@ -152,6 +153,16 @@ def search_for_paper_main_authors(parsedInfo, pmid_authors_df):
 
     return paper_main_authors, pmid_authors_df
 
+def create_final_df(pmid_authors_df):
+    shown_df=pmid_authors_df.iloc[:,:-2]
+    shown_df['pubmedid_link'] = shown_df['pubmedid'].apply(make_clickable)
+    shown_df=shown_df.drop(columns=['pubmedid'])
+    return shown_df
+
+
+def make_clickable(pubmed_id):
+    url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
+    return f'<a href="{url}" target="_blank">{pubmed_id}</a>'
 
 def draw_map(pmid_authors_df):
     pmid_authors_deduplicated_df = pmid_authors_df.copy()
