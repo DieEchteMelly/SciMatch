@@ -1,5 +1,5 @@
 from ollamaworking import documentloader_fromprompt, rephrasing_input_to_fit_pubmedapiwrapper
-from makingmap import parsedInfotoDF, create_pmid_authors_df, draw_map, search_for_paper_main_authors, create_final_df
+from makingmap import parsedInfotoDF, create_pmid_authors_df, draw_map, search_for_paper_main_authors, create_final_df, create_final_paper_df
 from makingnetwork import lets_embed
 
 class SciMatch:
@@ -30,6 +30,10 @@ class SciMatch:
             raise ValueError("No documents found. Please check your input and try again.")
         parsedInfo = parsedInfotoDF(docs)
         return parsedInfo
+    
+    def get_paperInfo(self, parsedInfo):
+        paper_df = create_final_paper_df(parsedInfo)
+        return paper_df
     
     def get_authorsInfo_from_parsed_Info(self, parsedInfo):
         return create_pmid_authors_df(parsedInfo)

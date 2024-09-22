@@ -154,15 +154,29 @@ def search_for_paper_main_authors(parsedInfo, pmid_authors_df):
     return paper_main_authors, pmid_authors_df
 
 def create_final_df(pmid_authors_df):
-    shown_df=pmid_authors_df.iloc[:,:-2]
-    shown_df['pubmedid_link'] = shown_df['pubmedid'].apply(make_clickable)
-    shown_df=shown_df.drop(columns=['pubmedid'])
+    shown_df = pmid_authors_df.iloc[:, :-2]
+    shown_df['Link to PubMed'] = shown_df['pubmedid'].apply(lambda pubmed_id: f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/")
+    shown_df = shown_df.drop(columns=['pubmedid'])
+
+    shown_df.columns = [col.capitalize() if col != 'Link to PubMed' else col for col in shown_df.columns]
     return shown_df
 
+def create_final_paper_df(parsedInfo):
+    paperInfo = parsedInfo[['Title', 'page_content', 'Published', 'uid']]
 
+    paperInfo = paperInfo.rename(columns={
+        'page_content': 'Abstract'
+    })
+    paperInfo['Link to Paper in Database']=paperInfo['uid'].apply(lambda uid: f"https://pubmed.ncbi.nlm.nih.gov/{uid}/")
+    paperInfo=paperInfo.drop(columns=['uid'])
+    paperInfo.columns = [col.capitalize() if col != 'Link to Paper in Database' else col for col in paperInfo.columns]
+    return paperInfo
+
+'''
 def make_clickable(pubmed_id):
     url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
-    return f'<a href="{url}" target="_blank">{pubmed_id}</a>'
+    return f'{url}'
+'''
 
 def draw_map(pmid_authors_df):
     pmid_authors_deduplicated_df = pmid_authors_df.copy()

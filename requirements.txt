@@ -151,6 +151,7 @@ SQLAlchemy==2.0.31
 stack-data==0.6.3
 starlette==0.37.2
 streamlit==1.36.0
+streamlit-aggrid==1.0.5
 streamlit_folium==0.21.0
 sympy==1.12.1
 tenacity==8.5.0

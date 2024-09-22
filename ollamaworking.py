@@ -25,8 +25,7 @@ def documentloader_fromprompt(research_topic, top_k):
 
         host = f"{protocol}://{hostname}"
         
-        account = {'email':'melanie.altmann@studium.uni-hamburg.de', 'password':'be$oPe96'}
-        #account = {'email': os.getenv('ollama_user'), 'password': os.getenv('ollama_pw')}
+        account = {'email': os.getenv('ollama_user'), 'password': os.getenv('ollama_pw')}
         auth_url = f"{host}/api/v1/auths/signin"
         api_url = f"{host}/ollama"
 
@@ -70,7 +69,38 @@ def rephrasing_input_to_fit_pubmedapiwrapper(research_topic):
 
         llm = Ollama(base_url=api_url, model="llama3", temperature=0.0, headers= {"Authorization": "Bearer " + jwt})
 
-        template = "Rephrase this text for a PubMed search query: {text}. Answer with only your rephrased query."
+        template = f"""As an expert in PubMed queries and drug repositioning research, your task is to generate a comprehensive PubMed search query for this topic: {topic}
+
+        ## Guidelines:
+        1. Identify 3-5 key concepts related to the topic.
+        2. Use AND to combine main concepts, OR for synonyms within concepts.
+        3. Use asterisk (*) for truncation, question mark (?) for wildcards.
+        4. Use quotation marks for exact phrases.
+        5. Use [Title/Abstract] for free-text searches, [Mesh] for MeSH terms (in quotes, lowercase).
+        6. Use [All Fields] when appropriate for broader searches.
+        7. Group terms for each concept in parentheses, combine with AND.
+        8. Include relevant synonyms and related terms for key concepts.
+        9. Balance between specificity (precision) and sensitivity (recall).
+        10. Consider using NOT to exclude irrelevant results if necessary.
+
+        ## Query Structure:
+        ```
+        ((Concept1[Title/Abstract] OR "Concept1"[Mesh] OR Synonym1[All Fields])
+        AND
+        (Concept2[Title/Abstract] OR "Concept2"[Mesh] OR Synonym2[All Fields])
+        AND
+        (Concept3[Title/Abstract] OR "Concept3"[Mesh] OR Synonym3[All Fields])
+        AND
+        (Concept4[Title/Abstract] OR "Concept4"[Mesh] OR Synonym4[All Fields]))
+        ```
+
+        ## Additional Considerations:
+        - If the topic is related to reviews, consider including terms for different types of reviews (e.g., "systematic review"[Title/Abstract], "meta-analysis"[Title/Abstract]).
+        - If the topic is about tools or software, include terms related to their availability (e.g., "software"[Title/Abstract], "tool*"[Title/Abstract], "github"[All Fields]).
+        - If the topic involves databases, include terms related to database accessibility (e.g., "database"[Title/Abstract], "dataset"[Title/Abstract], "API"[All Fields]).
+
+        Provide ONLY the query, no explanations. Start with (( and end with ))."""
+        
         prompt = PromptTemplate(template=template, input_variables=["text"])
 
         chain = LLMChain(llm=llm, prompt = prompt)
@@ -78,10 +108,6 @@ def rephrasing_input_to_fit_pubmedapiwrapper(research_topic):
         print(f"Debug: Rephrased Query - {rephrased_query}")
         if rephrased_query is None:
             raise ValueError("Rephrasing returned None.")
-        
-        df = pd.DataFrame([[rephrased_query]], columns=['rephrased_query'])
-        df.to_csv("txt.csv", index=False)
-        print("Debug: txt.csv saved successfully.")
         return rephrased_query
         
     except Exception as e:

@@ -28,9 +28,9 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors, ss_treshold):
     
     # Fuse authors by grouping them based on forename, lastname, and affiliation
     fused_authors_df = authors_df.groupby(['research']).agg({
-        'forename': lambda x: ', '.join(set(x)),  # Join all unique first names
-        'lastname': lambda x: ', '.join(set(x)),  # Join all unique last names
-        'affiliation': lambda x: '; '.join(set(x)),  # Join all unique last names
+        'forename': lambda x: ', '.join(x),  # Join all unique first names
+        'lastname': lambda x: ', '.join(x),  # Join all unique last names
+        'affiliation': lambda x: '; '.join(x),  # Join all unique last names
         'research': 'count'    # Keep the first PubMed ID for reference
     }).rename(columns={'research': 'count'}).reset_index()
     # Convert all float32 columns to standard float (float64) in the dataframe
@@ -85,6 +85,7 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors, ss_treshold):
     colors = [rgb_to_hex(color) for color in palette]
     # Initialize the network
     net = Network(height="750px", width="100%", bgcolor="#dddddd", font_color="black", filter_menu=True, notebook=True, cdn_resources='remote')
+    net.toggle_physics(False)
     net.toggle_hide_edges_on_drag(False)
 
     # Create a set of full names for first and last authors from paper_main_authors for quick lookup
@@ -102,20 +103,23 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors, ss_treshold):
     
         
         # Construct the full names of the authors in the current node
+        if len(forenames) != len(lastnames):
+            print(f"Warning: Mismatch in the number of forenames and lastnames for record {row['research']}")
+
+        num_authors = min(len(forenames), len(lastnames))
         full_names = [f"{forenames[i]} {lastnames[i]}" for i in range(num_authors)]
-        
         # Prioritization logic: Check if last_author or first_author is present
         prioritized_label = None
-        for last_author in paper_main_authors['last_author']:
-            if last_author in full_names:
-                prioritized_label = last_author
-                break
-        
         if not prioritized_label:
             for first_author in paper_main_authors['first_author']:
                 if first_author in full_names:
                     prioritized_label = first_author
                     break
+
+        for last_author in paper_main_authors['last_author']:
+            if last_author in full_names:
+                prioritized_label = last_author
+                break      
         
         # If neither first_author nor last_author is found, default to the first author in the node
         if not prioritized_label:
