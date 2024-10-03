@@ -116,10 +116,10 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors, ss_treshold):
                     prioritized_label = first_author
                     break
 
-        for last_author in paper_main_authors['last_author']:
-            if last_author in full_names:
-                prioritized_label = last_author
-                break      
+            for last_author in paper_main_authors['last_author']:
+                if last_author in full_names:
+                    prioritized_label = last_author
+                    break      
         
         # If neither first_author nor last_author is found, default to the first author in the node
         if not prioritized_label:

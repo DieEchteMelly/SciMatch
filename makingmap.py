@@ -155,10 +155,10 @@ def search_for_paper_main_authors(parsedInfo, pmid_authors_df):
 
 def create_final_df(pmid_authors_df):
     shown_df = pmid_authors_df.iloc[:, :-2]
-    shown_df['Link to PubMed'] = shown_df['pubmedid'].apply(lambda pubmed_id: f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/")
+    shown_df['Link to Paper in Database'] = shown_df['pubmedid'].apply(lambda pubmed_id: f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/")
     shown_df = shown_df.drop(columns=['pubmedid'])
 
-    shown_df.columns = [col.capitalize() if col != 'Link to PubMed' else col for col in shown_df.columns]
+    shown_df.columns = [col.capitalize() if col != 'Link to Paper in Database' else col for col in shown_df.columns]
     return shown_df
 
 def create_final_paper_df(parsedInfo):

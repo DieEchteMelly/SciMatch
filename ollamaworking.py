@@ -36,7 +36,7 @@ def documentloader_fromprompt(research_topic, top_k):
 
         embeddings = OllamaEmbeddings(base_url=api_url, model="nomic-embed-text", headers= {"Authorization": "Bearer " + jwt})
 
-        retriever = PubMedRetriever(top_k_results=top_k)
+        retriever = PubMedRetriever(top_k_results=top_k, sorting="Best_match")
 
         prompt = research_topic
         docs = retriever.invoke(prompt)
@@ -69,7 +69,7 @@ def rephrasing_input_to_fit_pubmedapiwrapper(research_topic):
 
         llm = Ollama(base_url=api_url, model="llama3", temperature=0.0, headers= {"Authorization": "Bearer " + jwt})
 
-        template = f"""As an expert in PubMed queries and drug repositioning research, your task is to generate a comprehensive PubMed search query for this topic: {topic}
+        template = f"""As an expert in PubMed queries and drug repositioning research, your task is to generate a comprehensive PubMed search query for this topic: {research_topic}
 
         ## Guidelines:
         1. Identify 3-5 key concepts related to the topic.

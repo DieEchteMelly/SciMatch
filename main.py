@@ -29,7 +29,7 @@ with mitte:
                 try:
                     rephrased_topic = sci_match.rephrase(research_topic)
                     st.session_state.rephrased_topic = rephrased_topic
-                    st.success(f"Rephrasing complete!\n\nRephrased Query: {rephrased_topic}\n\nCopy this in the input field and press enter to confirm the new search. ")
+                    st.success(f"Rephrasing complete!\n\nYour input: {research_topic}\n\nRephrased Query: {rephrased_topic}\n\nCopy this in the input field, press enter to confirm the new query and Run SciMatch. ")
                 except Exception as e:
                     st.error(f"Error during rephrasing: {e}")
         # Add the "Run SciMatch" button below the "Rephrase with AI" button
