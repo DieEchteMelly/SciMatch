@@ -1,26 +1,21 @@
 import pandas as pd
-import re
 from Bio import Entrez
 from pycountry import countries
 from geopy.geocoders import Nominatim
-from itables import show, init_notebook_mode
-import numpy as np
 import folium
-from folium.plugins import MarkerCluster
-import geojson
 import json
 
 pd.set_option('display.max_colwidth',None) 
 
 def parsedInfotoDF(docs):
     data_dicts=[]
-    for data_document in docs: #iterate through all entry in list "source document"
-        dict_of_document = dict(data_document.dict(), **data_document.dict()["metadata"]) #make a dict out of the entries in the list and add metadata additionally so that we dont have a dict in a dict
-        del dict_of_document["metadata"] #delete the dict in dict metadata
-        del dict_of_document["type"] #delete type
-        data_dicts.append(dict_of_document) #add this dict to the empty list
-    data_dicts #shows list of dicts
-    parsedInfo = pd.DataFrame.from_records(data_dicts) #create dataframe from the list of dicts
+    for data_document in docs: # iterate through all entry in list "source document"
+        dict_of_document = dict(data_document.dict(), **data_document.dict()["metadata"]) # make a dict out of the entries in the list and add metadata additionally so that we dont have a dict in a dict
+        del dict_of_document["metadata"] # delete the dict in dict metadata
+        del dict_of_document["type"] # delete type
+        data_dicts.append(dict_of_document) # add this dict to the empty list
+    data_dicts # shows list of dicts
+    parsedInfo = pd.DataFrame.from_records(data_dicts) # create dataframe from the list of dicts
     parsedInfo.set_index('uid') # set uid as index
     return parsedInfo
 
@@ -171,12 +166,6 @@ def create_final_paper_df(parsedInfo):
     paperInfo=paperInfo.drop(columns=['uid'])
     paperInfo.columns = [col.capitalize() if col != 'Link to Paper in Database' else col for col in paperInfo.columns]
     return paperInfo
-
-'''
-def make_clickable(pubmed_id):
-    url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
-    return f'{url}'
-'''
 
 def draw_map(pmid_authors_df):
     pmid_authors_deduplicated_df = pmid_authors_df.copy()

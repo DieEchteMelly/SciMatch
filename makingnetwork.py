@@ -1,11 +1,9 @@
 import pandas as pd
-from langchain_community.llms import Ollama
 from langchain.embeddings import OllamaEmbeddings
 from langchain_community.document_loaders import DataFrameLoader
 from langchain_core.documents import Document
 import requests, json
 from langchain_community.vectorstores import FAISS
-import faiss
 import numpy as np
 import math
 from sklearn.metrics.pairwise import cosine_similarity, cosine_distances
@@ -31,6 +29,7 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors, ss_treshold):
         'forename': lambda x: ', '.join(x),  # Join all unique first names
         'lastname': lambda x: ', '.join(x),  # Join all unique last names
         'affiliation': lambda x: '; '.join(x),  # Join all unique last names
+        'pubmedid': 'first',
         'research': 'count'    # Keep the first PubMed ID for reference
     }).rename(columns={'research': 'count'}).reset_index()
     # Convert all float32 columns to standard float (float64) in the dataframe
@@ -89,57 +88,49 @@ def lets_embed(pmid_authors_df, parsedInfo, paper_main_authors, ss_treshold):
     net.toggle_hide_edges_on_drag(False)
 
     # Create a set of full names for first and last authors from paper_main_authors for quick lookup
-    highlight_authors = set(paper_main_authors['first_author']).union(set(paper_main_authors['last_author']))
-    prioritized_labels = {}
+    first_author_dict = dict(zip(paper_main_authors['uid'], paper_main_authors['first_author']))
+
     # Add nodes with custom hover information
+    prioritized_labels = {}
     for idx, row in fused_authors_df.iterrows():
         node_id = idx
+        pubmed_id = row['pubmedid']  # Assuming this column exists in fused_authors_df
         forenames = row['forename'].split(",")
         lastnames = row['lastname'].split(",")
         affiliations = row.get('affiliation', 'No affiliation').split("; ")
-        #title = f"{full_name}: {affiliation}"
+        first_author = first_author_dict.get(pubmed_id, "Unknown Author")
+        prioritized_labels[idx] = f"{first_author} et al."
+
         color = colors[idx]
         num_authors = min(len(forenames), len(lastnames), len(affiliations))
-    
         
-        # Construct the full names of the authors in the current node
-        if len(forenames) != len(lastnames):
-            print(f"Warning: Mismatch in the number of forenames and lastnames for record {row['research']}")
+        # Get the first author for this paper
+        first_author = first_author_dict.get(pubmed_id, "Unknown Author")
 
-        num_authors = min(len(forenames), len(lastnames))
-        full_names = [f"{forenames[i]} {lastnames[i]}" for i in range(num_authors)]
-        # Prioritization logic: Check if last_author or first_author is present
-        prioritized_label = None
-        if not prioritized_label:
-            for first_author in paper_main_authors['first_author']:
-                if first_author in full_names:
-                    prioritized_label = first_author
-                    break
+        # Create the node label
+        node_label = f"{first_author} et al."
 
-            for last_author in paper_main_authors['last_author']:
-                if last_author in full_names:
-                    prioritized_label = last_author
-                    break      
-        
-        # If neither first_author nor last_author is found, default to the first author in the node
-        if not prioritized_label:
-            prioritized_label = full_names[0] if num_authors == 1 else f"{full_names[0]} et al."
-        prioritized_labels[node_id]=prioritized_label
         # Construct the hover title with full names and affiliations
         labels = []
         for i in range(num_authors):
-            forename = forenames[i]
-            lastname = lastnames[i]
+            forename = forenames[i].strip()
+            lastname = lastnames[i].strip()
             affiliation = affiliations[i] if i < len(affiliations) else 'No affiliation'
             
-            labels.append(f"{forename.upper()} {lastname.upper()}: {affiliation}")
-    
+            full_name = f"{forename} {lastname}"
+            if full_name == first_author:
+                labels.append(f"*{forename.upper()} {lastname.upper()}* (First Author): {affiliation}")
+            else:
+                labels.append(f"{forename.upper()} {lastname.upper()}: {affiliation}")
+
         # Join labels with newline characters
         hover_text = "\n".join(labels)
-        # Check if the full name is in the highlight_authors set
-        size = math.log(row['count'])*10
+        
+        # Set node size based on the count of research papers
+        size = math.log(row['count']) * 10
             
-        net.add_node(node_id, label=prioritized_label, title=hover_text, color=color, size=size)
+        net.add_node(node_id, label=node_label, title=hover_text, color=color, size=size)
+
     # Define a uniform color for all edges
     edge_color = '#a6a6a6'  # Grey color for all edges
 
