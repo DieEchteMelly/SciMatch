@@ -22,6 +22,7 @@ SciMatch is a tool designed to bring scientists together. With LLM enhanced inpu
 
 - Python 3.x
 - Additional Python libraries specified in `requirements.txt`
+- Login Information to the Server (request those here: https://chat.cosy.bio/); need to be stored accordingly in the ".env" file
 
 ## Installation from GitHub
 

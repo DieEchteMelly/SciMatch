@@ -36,11 +36,18 @@ with mitte:
     with st.container():
         st.header('What are you looking for?')
         research_topic = st.text_input("Your research topic goes here. Press Enter to confirm your search.", value=st.session_state.rephrased_topic)
-
         with st.expander('Further explanation and declaration', icon="ℹ️"):
-            top_k = st.slider("How many papers should we look for? Keep in mind, that the processing time increases with the number of papers to search for.", min_value=3, max_value=30, value=3, step=1)
-            st.write("The quality of your results will depend on the quality of your topic description. It is helpful to keep your input simple. You might want to consider using the following scheme if you have a very specific topic: {X} AND ({Y} OR {Z}). If you're still getting no results, you could try using the 'Rephrase with AI' button.")
-        # Ensure top_k is an integer
+                    top_k = st.slider("How many papers should we look for? Keep in mind, that the processing time increases with the number of papers to search for.", min_value=3, max_value=30, value=3, step=1)
+                    st.write("The quality of your results will depend on the quality of your topic description. It is helpful to keep your input simple. You might want to consider using the following scheme if you have a very specific topic: {X} AND ({Y} OR {Z}). If you're still getting no results, you could try using the 'Rephrase with AI' button.")
+                
+        if st.button('Rephrase with AI'):
+            with st.spinner("Rephrasing..."):
+                try:
+                    rephrased_topic = sci_match.rephrase(research_topic)
+                    st.session_state.rephrased_topic = rephrased_topic
+                    st.success(f"Rephrasing complete!\n\nYour input: {research_topic}\n\nRephrased Query: {rephrased_topic}\n\nCopy this in the input field, press enter to confirm the new query and Run SciMatch. ")
+                except Exception as e:
+                    st.error(f"Error during rephrasing: {e}")  
         top_k = int(top_k) if top_k else 3  # Set 5 as the default if no value is provided
 
         if st.button('Run SciMatch', type="primary"):
